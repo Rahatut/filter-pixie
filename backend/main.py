@@ -28,13 +28,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+MAX_IMAGE_DIMENSION = 2000
+
 
 def read_image(file: UploadFile) -> np.ndarray:
-    contents = file.file.read()
+    contents = file.file.read(MAX_UPLOAD_BYTES + 1)
+    if len(contents) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="Image must be 10 MB or smaller")
+
     nparr = np.frombuffer(contents, np.uint8)
     image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     if image is None:
         raise HTTPException(status_code=400, detail="Invalid image file")
+
+    height, width = image.shape[:2]
+    largest_dimension = max(height, width)
+    if largest_dimension > MAX_IMAGE_DIMENSION:
+        scale = MAX_IMAGE_DIMENSION / largest_dimension
+        image = cv2.resize(image, (int(width * scale), int(height * scale)), interpolation=cv2.INTER_AREA)
+
     return image
 
 
