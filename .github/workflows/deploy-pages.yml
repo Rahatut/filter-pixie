@@ -35,9 +35,8 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         env:
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_API_URL: https://filter-pixie.onrender.com
         run: |
-          test -n "$VITE_API_URL"
           npm run build
 
       - name: Upload Pages artifact
