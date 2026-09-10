@@ -1,46 +1,60 @@
-# filter-pixie
-A web app for image processing and filters using computer vision fundamentals
+# FilterPixie
+
+FilterPixie is a lightweight web app for transforming photos with computer vision. Upload an image, choose an effect style, adjust its intensity, and download the result as a PNG.
+
+The project combines a React and Vite frontend with a Python FastAPI backend. Image processing happens on demand and images are returned directly to the browser without permanent storage.
+
+## Features
+
+- Dreamy, noir, vintage, sketch, and neon filters
+- Adjustable filter intensity
+- In-memory image processing with OpenCV
+
+## Live app
+
+https://rahatut.github.io/filter-pixie/
 
 ## Run locally
 
-Start the API from `backend/`, then start the frontend from `frontend/`:
+Start the backend in one terminal:
 
 ```bash
-uvicorn main:app --reload
-npm install
-npm run dev
-```
-The site is available at:
-
-`https://rahatut.github.io/filter-pixie/`
-
-## Environment variables
-
-For local frontend development, no environment file is required. The Vite proxy forwards API requests to `http://localhost:8000`.
-
-If you want to call the local API directly, create `frontend/.env.local`:
-
-```env
-VITE_API_URL=http://localhost:8000
+cd backend && source venv/bin/activate && uvicorn main:app --reload
 ```
 
-Then run the backend with both origins allowed:
+Start the frontend in another:
 
-```env
-CORS_ORIGINS=http://localhost:5173,https://rahatut.github.io
+```bash
+cd frontend && npm install && npm run dev
 ```
 
-For the GitHub Pages build, add this repository variable at **Settings > Secrets and variables > Actions > Variables**:
+Open the local Vite URL shown in the terminal. The frontend proxies API requests to `http://localhost:8000`.
+
+## Deployment
+
+### GitHub Pages
+
+The workflow at `.github/workflows/deploy-pages.yml` builds and deploys the frontend automatically whenever `main` changes. GitHub repository settings must use **Settings > Pages > Source: GitHub Actions**.
+
+### Render
+
+The backend runs as a Render **Web Service** with:
 
 ```text
-Name: VITE_API_URL
-Value: https://your-deployed-api.example.com
+Root Directory: backend
+Build Command: pip install -r requirements.txt
+Start Command: uvicorn main:app --host 0.0.0.0 --port $PORT
 ```
 
-On the server hosting FastAPI, set:
+The backend allows the GitHub Pages origin by default. For a different frontend domain, set this Render environment variable:
 
 ```env
-CORS_ORIGINS=https://rahatut.github.io
+CORS_ORIGINS=https://your-frontend.example.com
 ```
 
-Do not commit `.env.local`, and do not put the backend URL in frontend source code. The GitHub Actions workflow injects `VITE_API_URL` during the Pages build.
+## Project structure
+
+```text
+backend/   FastAPI API and OpenCV filters
+frontend/  React and Vite application
+```
