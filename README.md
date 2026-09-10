@@ -20,13 +20,13 @@ https://rahatut.github.io/filter-pixie/
 
 ### Filter examples
 
-| Dreamy | Neon | Noir |
+| Dreamy | Neon | Sketch |
 | --- | --- | --- |
-| ![Dreamy filter](previews/dreamy.png) | ![Neon filter](previews/neon.png) | ![Noir filter](previews/noir.png) |
+| ![Dreamy filter](previews/dreamy.png) | ![Neon filter](previews/neon.png) | ![Sketch filter](previews/sketch.png) |
 
-| Sketch | Vintage |
+| Noir | Vintage |
 | --- | --- |
-| ![Sketch filter](previews/sketch.png) | ![Vintage filter](previews/vintage.png) |
+| ![Noir filter](previews/noir.png) | ![Vintage filter](previews/vintage.png) |
 
 ## Run locally
 
