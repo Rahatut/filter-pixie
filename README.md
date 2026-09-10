@@ -14,6 +14,20 @@ The project combines a React and Vite frontend with a Python FastAPI backend. Im
 
 https://rahatut.github.io/filter-pixie/
 
+## Preview
+
+![FilterPixie app preview](previews/webview.png)
+
+### Filter examples
+
+| Dreamy | Neon | Noir |
+| --- | --- | --- |
+| ![Dreamy filter](previews/dreamy.png) | ![Neon filter](previews/neon.png) | ![Noir filter](previews/noir.png) |
+
+| Sketch | Vintage |
+| --- | --- |
+| ![Sketch filter](previews/sketch.png) | ![Vintage filter](previews/vintage.png) |
+
 ## Run locally
 
 Start the backend in one terminal:
