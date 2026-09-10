@@ -11,14 +11,17 @@ from filters import FILTERS, FILTER_NAMES
 
 app = FastAPI(title="FilterPixie API")
 
-cors_origins = [
+configured_origins = [
     origin.strip()
-    for origin in os.getenv(
-        "CORS_ORIGINS",
-        "https://rahatut.github.io",
-    ).split(",")
+    for origin in os.getenv("CORS_ORIGINS", "").split(",")
     if origin.strip()
 ]
+cors_origins = list(dict.fromkeys([
+    "https://rahatut.github.io",
+    "http://localhost:5173",
+    "http://localhost:3000",
+    *configured_origins,
+]))
 
 app.add_middleware(
     CORSMiddleware,
