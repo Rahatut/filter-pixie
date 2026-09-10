@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useFilter } from './hooks/useFilter';
 import { DropZone } from './components/DropZone';
 import { FilterButtons } from './components/FilterButtons';
@@ -42,9 +42,9 @@ function App() {
     [originalImage, setSelectedFilter]
   );
 
-  if (filterError) {
-    setError(filterError);
-  }
+  useEffect(() => {
+    if (filterError) setError(filterError);
+  }, [filterError]);
 
   return (
     <main className="app">

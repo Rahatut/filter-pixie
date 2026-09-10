@@ -36,7 +36,9 @@ jobs:
         working-directory: frontend
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
-        run: npm run build
+        run: |
+          test -n "$VITE_API_URL"
+          npm run build
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

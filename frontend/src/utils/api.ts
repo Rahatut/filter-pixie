@@ -1,4 +1,12 @@
-const API_BASE = import.meta.env.VITE_API_URL || '';
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+
+function getApiUrl(path: string): string {
+  if (import.meta.env.PROD && !API_BASE) {
+    throw new Error('The image service is not configured. Set VITE_API_URL in GitHub Actions.');
+  }
+
+  return `${API_BASE}${path}`;
+}
 
 export async function applyFilter(
   file: File,
@@ -10,14 +18,14 @@ export async function applyFilter(
   formData.append('filter_name', filterId);
   formData.append('intensity', intensity.toString());
 
-  const response = await fetch(`${API_BASE}/apply-filter`, {
+  const response = await fetch(getApiUrl('/apply-filter'), {
     method: 'POST',
     body: formData,
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'Filter failed' }));
-    throw new Error(error.detail || 'Failed to apply filter');
+    const error = await response.json().catch(() => ({ detail: '' }));
+    throw new Error(error.detail || `Filter service returned ${response.status}.`);
   }
 
   const blob = await response.blob();
@@ -25,7 +33,7 @@ export async function applyFilter(
 }
 
 export async function fetchFilters(): Promise<Record<string, string>> {
-  const response = await fetch(`${API_BASE}/filters`);
+  const response = await fetch(getApiUrl('/filters'));
   if (!response.ok) throw new Error('Failed to fetch filters');
   return response.json();
 }
