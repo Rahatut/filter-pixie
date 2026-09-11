@@ -30,6 +30,7 @@ export function useFilter(): UseFilterReturn {
   const originalImageRef = useRef<string | null>(null);
   const filteredImageRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const appliedSettingsRef = useRef<string | null>(null);
 
   const reset = useCallback(() => {
     if (originalImageRef.current) URL.revokeObjectURL(originalImageRef.current);
@@ -42,6 +43,7 @@ export function useFilter(): UseFilterReturn {
     originalFileRef.current = null;
     originalImageRef.current = null;
     filteredImageRef.current = null;
+    appliedSettingsRef.current = null;
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
   }, [originalImage, filteredImage]);
@@ -75,6 +77,7 @@ export function useFilter(): UseFilterReturn {
         setFilteredImage(resultUrl);
       } catch (err) {
         if (abortControllerRef.current !== controller) return;
+        appliedSettingsRef.current = null;
         setError(err instanceof Error ? err.message : 'Something went wrong');
         setFilteredImage(null);
       } finally {
@@ -107,9 +110,13 @@ export function useFilter(): UseFilterReturn {
   }, [filteredImage, selectedFilter]);
 
   useEffect(() => {
-    if (filteredImage && selectedFilter && originalFileRef.current) {
-      applySelectedFilter(originalFileRef.current, selectedFilter);
-    }
+    if (!filteredImage || !selectedFilter || !originalFileRef.current) return;
+
+    const settingsKey = JSON.stringify([selectedFilter, parameters, polaroid]);
+    if (appliedSettingsRef.current === settingsKey) return;
+    appliedSettingsRef.current = settingsKey;
+
+    applySelectedFilter(originalFileRef.current, selectedFilter);
   }, [selectedFilter, parameters, polaroid, applySelectedFilter]);
 
   return {
