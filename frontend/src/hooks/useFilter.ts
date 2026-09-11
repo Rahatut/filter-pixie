@@ -27,6 +27,7 @@ export function useFilter(): UseFilterReturn {
   const [selectedFilter, setSelectedFilterState] = useState<FilterId | null>(null);
   const [polaroid, setPolaroid] = useState(false);
   const originalFileRef = useRef<File | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const reset = useCallback(() => {
     if (originalImage) URL.revokeObjectURL(originalImage);
@@ -37,10 +38,16 @@ export function useFilter(): UseFilterReturn {
     setPolaroid(false);
     setError(null);
     originalFileRef.current = null;
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
   }, [originalImage, filteredImage]);
 
   const applySelectedFilter = useCallback(
     async (file: File, filterId: FilterId) => {
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       setIsLoading(true);
       setError(null);
       setSelectedFilterState(filterId);
@@ -53,7 +60,7 @@ export function useFilter(): UseFilterReturn {
       }
 
       try {
-        const resultUrl = await applyFilter(file, filterId, 1, parameters, polaroid);
+        const resultUrl = await applyFilter(file, filterId, 1, parameters, polaroid, controller.signal);
         if (filteredImage) URL.revokeObjectURL(filteredImage);
         setFilteredImage(resultUrl);
       } catch (err) {
@@ -61,6 +68,9 @@ export function useFilter(): UseFilterReturn {
         setFilteredImage(null);
       } finally {
         setIsLoading(false);
+        if (abortControllerRef.current === controller) {
+          abortControllerRef.current = null;
+        }
       }
     },
     [parameters, polaroid, filteredImage, originalImage]
@@ -86,10 +96,10 @@ export function useFilter(): UseFilterReturn {
   }, [filteredImage, selectedFilter]);
 
   useEffect(() => {
-    if (filteredImage && selectedFilter && originalFileRef.current) {
+    if (filteredImage && selectedFilter && originalFileRef.current && !isLoading) {
       applySelectedFilter(originalFileRef.current, selectedFilter);
     }
-  }, [selectedFilter, parameters, polaroid]);
+  }, [selectedFilter, parameters, polaroid, isLoading, applySelectedFilter]);
 
   return {
     originalImage,

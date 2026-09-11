@@ -10,12 +10,36 @@ function getApiUrl(path: string): string {
   return `${API_BASE}${path}`;
 }
 
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+  timeoutMs = 60000
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Request timed out. The image service may be starting up.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export async function applyFilter(
   file: File,
   filterId: string,
   intensity: number,
   parameters: FilterParameters,
-  polaroid: boolean
+  polaroid: boolean,
+  signal?: AbortSignal
 ): Promise<string> {
   const formData = new FormData();
   formData.append('image', file);
@@ -24,22 +48,40 @@ export async function applyFilter(
   formData.append('parameters', JSON.stringify(parameters));
   formData.append('polaroid', polaroid.toString());
 
-  const response = await fetch(getApiUrl('/apply-filter'), {
-    method: 'POST',
-    body: formData,
-  });
+  const maxAttempts = 2;
+  let lastError: Error | null = null;
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: '' }));
-    throw new Error(error.detail || `Filter service returned ${response.status}.`);
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await fetchWithTimeout(getApiUrl('/apply-filter'), {
+        method: 'POST',
+        body: formData,
+        signal,
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: '' }));
+        throw new Error(error.detail || `Filter service returned ${response.status}.`);
+      }
+
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error('Something went wrong');
+      const isNetworkError = err instanceof Error && err.name === 'TypeError';
+      if (attempt < maxAttempts && isNetworkError) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        continue;
+      }
+      throw lastError;
+    }
   }
 
-  const blob = await response.blob();
-  return URL.createObjectURL(blob);
+  throw lastError;
 }
 
 export async function fetchFilters(): Promise<Record<string, string>> {
-  const response = await fetch(getApiUrl('/filters'));
+  const response = await fetchWithTimeout(getApiUrl('/filters'));
   if (!response.ok) throw new Error('Failed to fetch filters');
   return response.json();
 }
