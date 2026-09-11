@@ -8,6 +8,8 @@ import numpy as np
 
 from filters import ENGINE, FILTER_NAMES, parameter_dict, preset_parameters
 
+cv2.setNumThreads(1)
+
 app = FastAPI(title="FilterPixie API")
 
 configured_origins = [
@@ -31,7 +33,7 @@ app.add_middleware(
 )
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
-MAX_IMAGE_DIMENSION = 2000
+MAX_IMAGE_DIMENSION = 1400
 
 
 def read_image(file: UploadFile) -> np.ndarray:
