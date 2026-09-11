@@ -66,6 +66,8 @@ The backend allows the GitHub Pages origin by default. For a different frontend 
 CORS_ORIGINS=https://your-frontend.example.com
 ```
 
+Set Render's health check path to `/health` so it can detect when the service is ready.
+
 ## Filter engine
 
 FilterPixie uses one `FilterEngine` for every image. Presets only provide values for the shared `FilterParameters` object; they do not contain image-processing code. The pipeline applies these stages in order:

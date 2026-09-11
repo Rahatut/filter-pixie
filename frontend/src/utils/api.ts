@@ -13,10 +13,21 @@ function getApiUrl(path: string): string {
 async function fetchWithTimeout(
   input: RequestInfo | URL,
   init?: RequestInit,
-  timeoutMs = 60000
+  timeoutMs = 90000
 ): Promise<Response> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  let didTimeout = false;
+  const timeoutId = setTimeout(() => {
+    didTimeout = true;
+    controller.abort();
+  }, timeoutMs);
+  const callerSignal = init?.signal;
+  const abortFromCaller = () => controller.abort(callerSignal?.reason);
+
+  if (callerSignal) {
+    if (callerSignal.aborted) abortFromCaller();
+    else callerSignal.addEventListener('abort', abortFromCaller, { once: true });
+  }
 
   try {
     return await fetch(input, {
@@ -24,13 +35,27 @@ async function fetchWithTimeout(
       signal: controller.signal,
     });
   } catch (error) {
+    if (didTimeout) {
+      const timeoutError = new Error('Request timed out. The image service may be starting up.');
+      timeoutError.name = 'TimeoutError';
+      throw timeoutError;
+    }
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('Request timed out. The image service may be starting up.');
+      throw error;
     }
     throw error;
   } finally {
+    if (callerSignal) callerSignal.removeEventListener('abort', abortFromCaller);
     clearTimeout(timeoutId);
   }
+}
+
+function isRetryableError(error: unknown): boolean {
+  return error instanceof Error && (error.name === 'TypeError' || error.name === 'TimeoutError');
+}
+
+async function waitBeforeRetry(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 }
 
 export async function applyFilter(
@@ -68,9 +93,8 @@ export async function applyFilter(
       return URL.createObjectURL(blob);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error('Something went wrong');
-      const isNetworkError = err instanceof Error && err.name === 'TypeError';
-      if (attempt < maxAttempts && isNetworkError) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (attempt < maxAttempts && isRetryableError(lastError) && !signal?.aborted) {
+        await waitBeforeRetry();
         continue;
       }
       throw lastError;

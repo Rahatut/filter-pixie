@@ -27,17 +27,21 @@ export function useFilter(): UseFilterReturn {
   const [selectedFilter, setSelectedFilterState] = useState<FilterId | null>(null);
   const [polaroid, setPolaroid] = useState(false);
   const originalFileRef = useRef<File | null>(null);
+  const originalImageRef = useRef<string | null>(null);
+  const filteredImageRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const reset = useCallback(() => {
-    if (originalImage) URL.revokeObjectURL(originalImage);
-    if (filteredImage) URL.revokeObjectURL(filteredImage);
+    if (originalImageRef.current) URL.revokeObjectURL(originalImageRef.current);
+    if (filteredImageRef.current) URL.revokeObjectURL(filteredImageRef.current);
     setOriginalImage(null);
     setFilteredImage(null);
     setSelectedFilterState(null);
     setPolaroid(false);
     setError(null);
     originalFileRef.current = null;
+    originalImageRef.current = null;
+    filteredImageRef.current = null;
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
   }, [originalImage, filteredImage]);
@@ -53,27 +57,34 @@ export function useFilter(): UseFilterReturn {
       setSelectedFilterState(filterId);
 
       if (originalFileRef.current !== file) {
-        if (originalImage) URL.revokeObjectURL(originalImage);
+        if (originalImageRef.current) URL.revokeObjectURL(originalImageRef.current);
         const objectUrl = URL.createObjectURL(file);
+        originalImageRef.current = objectUrl;
         setOriginalImage(objectUrl);
         originalFileRef.current = file;
       }
 
       try {
         const resultUrl = await applyFilter(file, filterId, 1, parameters, polaroid, controller.signal);
-        if (filteredImage) URL.revokeObjectURL(filteredImage);
+        if (abortControllerRef.current !== controller) {
+          URL.revokeObjectURL(resultUrl);
+          return;
+        }
+        if (filteredImageRef.current) URL.revokeObjectURL(filteredImageRef.current);
+        filteredImageRef.current = resultUrl;
         setFilteredImage(resultUrl);
       } catch (err) {
+        if (abortControllerRef.current !== controller) return;
         setError(err instanceof Error ? err.message : 'Something went wrong');
         setFilteredImage(null);
       } finally {
-        setIsLoading(false);
         if (abortControllerRef.current === controller) {
+          setIsLoading(false);
           abortControllerRef.current = null;
         }
       }
     },
-    [parameters, polaroid, filteredImage, originalImage]
+    [parameters, polaroid]
   );
 
   const setParameter = useCallback((id: keyof FilterParameters, value: number) => {

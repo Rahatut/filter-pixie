@@ -82,6 +82,11 @@ async def root():
     return {"message": "FilterPixie API", "filters": FILTER_NAMES}
 
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
 @app.get("/filters")
 async def list_filters():
     return FILTER_NAMES
