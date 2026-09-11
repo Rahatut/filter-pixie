@@ -1,3 +1,5 @@
+import type { FilterParameters } from '../types/filters';
+
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 function getApiUrl(path: string): string {
@@ -11,12 +13,14 @@ function getApiUrl(path: string): string {
 export async function applyFilter(
   file: File,
   filterId: string,
-  intensity: number
+  intensity: number,
+  parameters: FilterParameters
 ): Promise<string> {
   const formData = new FormData();
   formData.append('image', file);
   formData.append('filter_name', filterId);
   formData.append('intensity', intensity.toString());
+  formData.append('parameters', JSON.stringify(parameters));
 
   const response = await fetch(getApiUrl('/apply-filter'), {
     method: 'POST',

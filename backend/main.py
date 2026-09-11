@@ -2,12 +2,11 @@ from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import json
 import cv2
 import numpy as np
-from PIL import Image
-import io
 
-from filters import FILTERS, FILTER_NAMES
+from filters import ENGINE, FILTER_NAMES, parameter_dict, preset_parameters
 
 app = FastAPI(title="FilterPixie API")
 
@@ -69,17 +68,49 @@ async def list_filters():
     return FILTER_NAMES
 
 
+@app.get("/parameters")
+async def list_parameters():
+    return {
+        "presets": {name: parameter_dict(preset_parameters(name)) for name in FILTER_NAMES},
+        "parameters": [
+            {"id": "brightness", "name": "Brightness", "min": -1, "max": 1, "step": 0.01, "group": "Exposure"},
+            {"id": "contrast", "name": "Contrast", "min": 0, "max": 2, "step": 0.01, "group": "Tone"},
+            {"id": "hue", "name": "Hue", "min": -360, "max": 360, "step": 1, "group": "Color"},
+            {"id": "saturation", "name": "Saturation", "min": 0, "max": 2, "step": 0.01, "group": "Color"},
+            {"id": "value", "name": "Value", "min": 0, "max": 2, "step": 0.01, "group": "Color"},
+            {"id": "highlights", "name": "Highlights", "min": -1, "max": 1, "step": 0.01, "group": "Tone"},
+            {"id": "shadows", "name": "Shadows", "min": -1, "max": 1, "step": 0.01, "group": "Tone"},
+            {"id": "blur", "name": "Blur", "min": 0, "max": 1, "step": 0.01, "group": "Texture"},
+            {"id": "grain", "name": "Grain", "min": 0, "max": 1, "step": 0.01, "group": "Texture"},
+            {"id": "vignette", "name": "Vignette", "min": 0, "max": 1, "step": 0.01, "group": "Optical"},
+            {"id": "fade", "name": "Fade", "min": 0, "max": 1, "step": 0.01, "group": "Optical"},
+            {"id": "glow", "name": "Glow", "min": 0, "max": 1, "step": 0.01, "group": "Optical"},
+        ],
+    }
+
+
+def render_filter(image: np.ndarray, filter_name: str, intensity: float, parameter_json: str) -> np.ndarray:
+    if filter_name not in FILTER_NAMES:
+        raise HTTPException(status_code=400, detail=f"Unknown filter: {filter_name}")
+    try:
+        overrides = json.loads(parameter_json) if parameter_json else {}
+        if not isinstance(overrides, dict):
+            raise ValueError("parameters must be a JSON object")
+        parameters = preset_parameters(filter_name, intensity, overrides)
+    except (TypeError, ValueError, json.JSONDecodeError) as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return ENGINE.apply(image, parameters)
+
+
 @app.post("/apply-filter")
 async def apply_filter(
     image: UploadFile = File(...),
     filter_name: str = Form(...),
     intensity: float = Form(1.0),
+    parameters: str = Form("{}"),
 ):
-    if filter_name not in FILTERS:
-        raise HTTPException(status_code=400, detail=f"Unknown filter: {filter_name}")
-
     img = read_image(image)
-    filtered = FILTERS[filter_name](img, intensity=intensity)
+    filtered = render_filter(img, filter_name, intensity, parameters)
     result_bytes = encode_image(filtered)
 
     return Response(content=result_bytes, media_type="image/png")
@@ -90,14 +121,12 @@ async def apply_filter_base64(
     image: UploadFile = File(...),
     filter_name: str = Form(...),
     intensity: float = Form(1.0),
+    parameters: str = Form("{}"),
 ):
     import base64
 
-    if filter_name not in FILTERS:
-        raise HTTPException(status_code=400, detail=f"Unknown filter: {filter_name}")
-
     img = read_image(image)
-    filtered = FILTERS[filter_name](img, intensity=intensity)
+    filtered = render_filter(img, filter_name, intensity, parameters)
     result_bytes = encode_image(filtered)
     b64 = base64.b64encode(result_bytes).decode('utf-8')
 

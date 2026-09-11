@@ -2,23 +2,24 @@ import { useState, useCallback, useEffect } from 'react';
 import { useFilter } from './hooks/useFilter';
 import { DropZone } from './components/DropZone';
 import { FilterButtons } from './components/FilterButtons';
-import { IntensitySlider } from './components/IntensitySlider';
 import { DownloadButton } from './components/DownloadButton';
 import { ErrorMessage } from './components/ErrorMessage';
-import type { FilterId } from './types/filters';
+import { ParameterControls } from './components/ParameterControls';
+import type { FilterId, FilterParameters } from './types/filters';
 
 function App() {
   const [error, setError] = useState<string | null>(null);
+  const [showAdjustments, setShowAdjustments] = useState(false);
 
   const {
     originalImage,
     filteredImage,
     isLoading,
     error: filterError,
-    intensity,
+    parameters,
     selectedFilter,
     applySelectedFilter,
-    setIntensity,
+    setParameter,
     setSelectedFilter,
     reset,
     downloadImage,
@@ -40,6 +41,15 @@ function App() {
       }
     },
     [originalImage, setSelectedFilter]
+  );
+
+  const handleColorPick = useCallback(
+    (colorValues: Pick<FilterParameters, 'hue' | 'saturation' | 'value'>) => {
+      setParameter('hue', colorValues.hue);
+      setParameter('saturation', colorValues.saturation);
+      setParameter('value', colorValues.value);
+    },
+    [setParameter]
   );
 
   useEffect(() => {
@@ -93,7 +103,30 @@ function App() {
                 disabled={isLoading}
               />
 
-              <IntensitySlider value={intensity} onChange={setIntensity} disabled={isLoading} />
+              <button
+                className={`adjust-btn ${showAdjustments ? 'active' : ''}`}
+                type="button"
+                onClick={() => setShowAdjustments((isOpen) => !isOpen)}
+                aria-expanded={showAdjustments}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h10M18 18h2" />
+                  <circle cx="16" cy="6" r="2" />
+                  <circle cx="8" cy="12" r="2" />
+                  <circle cx="16" cy="18" r="2" />
+                </svg>
+                <span>Adjust</span>
+                <span className="adjust-chevron" aria-hidden="true">{showAdjustments ? '−' : '+'}</span>
+              </button>
+
+              {showAdjustments && (
+                <ParameterControls
+                  values={parameters}
+                  onChange={setParameter}
+                  onColorPick={handleColorPick}
+                  disabled={isLoading}
+                />
+              )}
 
               <DownloadButton onDownload={downloadImage} disabled={isLoading || !filteredImage} />
             </div>
@@ -110,6 +143,7 @@ function App() {
         onClick={() => {
           reset();
           setError(null);
+          setShowAdjustments(false);
         }}
         disabled={!originalImage}
         aria-label="Start over"

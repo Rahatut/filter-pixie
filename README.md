@@ -6,9 +6,9 @@ The project combines a React and Vite frontend with a Python FastAPI backend. Im
 
 ## Features
 
-- Dreamy, noir, vintage, sketch, and neon filters
-- Adjustable filter intensity
-- In-memory image processing with OpenCV
+- Dreamy, noir, vintage, sketch, and neon parameter presets
+- Manual controls for exposure, color, tone, detail, texture, and optical effects
+- In-memory image processing with a modular OpenCV and NumPy pipeline
 
 ## Live app
 
@@ -66,9 +66,29 @@ The backend allows the GitHub Pages origin by default. For a different frontend 
 CORS_ORIGINS=https://your-frontend.example.com
 ```
 
+## Filter engine
+
+FilterPixie uses one `FilterEngine` for every image. Presets only provide values for the shared `FilterParameters` object; they do not contain image-processing code. The pipeline applies these stages in order:
+
+1. Exposure
+2. Color
+3. Tone
+4. Detail
+5. Texture
+6. Optical effects
+
+The API accepts the existing `filter_name` and `intensity` fields, plus an optional `parameters` JSON object for manual overrides. For example:
+
+```json
+{"brightness": 0.08, "contrast": 0.9, "hue": 8, "saturation": 1.15, "value": 1.08, "grain": 0.02}
+```
+
+Use `GET /parameters` to retrieve preset values and the parameter metadata used to build controls.
+Color adjustments use global HSV controls: `hue` is measured in degrees and wraps around the color wheel, while `saturation` and `value` are multipliers where `1` preserves the source.
+
 ## Project structure
 
 ```text
-backend/   FastAPI API and OpenCV filters
+backend/   FastAPI API, parameter presets, and the shared OpenCV engine
 frontend/  React and Vite application
 ```

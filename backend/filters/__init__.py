@@ -1,21 +1,14 @@
-from .dreamy import apply as dreamy_apply
-from .noir import apply as noir_apply
-from .vintage import apply as vintage_apply
-from .sketch import apply as sketch_apply
-from .neon import apply as neon_apply
+from .engine import ENGINE
+from .parameters import PRESETS, PRESET_NAMES, FilterParameters, parameter_dict, preset_parameters
 
-FILTERS = {
-    "dreamy": dreamy_apply,
-    "noir": noir_apply,
-    "vintage": vintage_apply,
-    "sketch": sketch_apply,
-    "neon": neon_apply,
-}
+FILTERS = PRESETS
+FILTER_NAMES = PRESET_NAMES
 
-FILTER_NAMES = {
-    "dreamy": "Dreamy",
-    "noir": "Noir",
-    "vintage": "Vintage",
-    "sketch": "Sketch",
-    "neon": "Neon",
-}
+__all__ = [
+    "ENGINE",
+    "FILTERS",
+    "FILTER_NAMES",
+    "FilterParameters",
+    "parameter_dict",
+    "preset_parameters",
+]

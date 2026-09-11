@@ -293,6 +293,21 @@ img {
 .intensity-value { color: var(--ink); font-family: 'DM Mono', monospace; font-size: 11px; }
 .intensity-input { width: 100%; height: 4px; accent-color: var(--accent); cursor: pointer; }
 
+.parameter-controls { display: grid; gap: 18px; padding-top: 2px; border-top: 1px solid var(--line); }
+.parameter-group { display: grid; gap: 10px; }
+.parameter-group h3 { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+.color-picker-row { display: flex; min-height: 38px; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 3px; color: var(--ink); font-size: 11px; font-weight: 700; }
+.color-picker-row input { width: 42px; height: 28px; padding: 2px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); cursor: pointer; }
+.parameter-row { display: grid; grid-template-columns: 1fr 40px; gap: 8px 12px; align-items: center; color: var(--ink); font-size: 11px; font-weight: 600; }
+.parameter-row output { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; text-align: right; }
+.parameter-row input { grid-column: 1 / -1; width: 100%; height: 3px; accent-color: var(--accent); cursor: pointer; }
+
+.adjust-btn { display: flex; min-height: 42px; align-items: center; gap: 9px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); font-size: 12px; font-weight: 800; text-align: left; transition: border-color var(--transition), color var(--transition), background var(--transition); }
+.adjust-btn:hover { border-color: var(--accent); color: var(--accent-dark); }
+.adjust-btn.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-dark); }
+.adjust-btn svg { width: 16px; height: 16px; }
+.adjust-chevron { margin-left: auto; color: currentColor; font-family: 'DM Mono', monospace; font-size: 16px; line-height: 1; }
+
 .download-btn { display: flex; width: 100%; min-height: 48px; align-items: center; justify-content: center; gap: 8px; border-radius: 8px; background: var(--ink); color: white; font-size: 12px; font-weight: 800; letter-spacing: 0.01em; transition: background var(--transition), transform var(--transition), box-shadow var(--transition); }
 .download-btn:hover:not(:disabled) { background: var(--accent-dark); transform: translateY(-1px); }
 .download-btn:disabled { cursor: not-allowed; opacity: 0.4; }
@@ -315,6 +330,7 @@ img {
   .drop-zone { min-height: 430px; }
   .editor { grid-template-columns: 1fr; }
   .editor-controls { padding: 20px; }
+  .parameter-controls { gap: 20px; }
   .preview-toolbar { padding-inline: 12px; }
   .reset-btn { right: 16px; bottom: 16px; }
 }
