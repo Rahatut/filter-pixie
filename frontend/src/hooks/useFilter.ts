@@ -96,10 +96,10 @@ export function useFilter(): UseFilterReturn {
   }, [filteredImage, selectedFilter]);
 
   useEffect(() => {
-    if (filteredImage && selectedFilter && originalFileRef.current && !isLoading) {
+    if (filteredImage && selectedFilter && originalFileRef.current) {
       applySelectedFilter(originalFileRef.current, selectedFilter);
     }
-  }, [selectedFilter, parameters, polaroid, isLoading, applySelectedFilter]);
+  }, [selectedFilter, parameters, polaroid, applySelectedFilter]);
 
   return {
     originalImage,
