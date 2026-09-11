@@ -18,8 +18,10 @@ function App() {
     error: filterError,
     parameters,
     selectedFilter,
+    polaroid,
     applySelectedFilter,
     setParameter,
+    setPolaroid,
     setSelectedFilter,
     reset,
     downloadImage,
@@ -118,6 +120,16 @@ function App() {
                 <span>Adjust</span>
                 <span className="adjust-chevron" aria-hidden="true">{showAdjustments ? '−' : '+'}</span>
               </button>
+
+              <label className={`output-toggle ${polaroid ? 'active' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={polaroid}
+                  onChange={(event) => setPolaroid(event.target.checked)}
+                  disabled={isLoading}
+                />
+                <span>Polaroid print</span>
+              </label>
 
               {showAdjustments && (
                 <ParameterControls

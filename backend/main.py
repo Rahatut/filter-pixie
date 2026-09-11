@@ -58,6 +58,25 @@ def encode_image(image: np.ndarray) -> bytes:
     return buffer.tobytes()
 
 
+def make_polaroid(image: np.ndarray) -> np.ndarray:
+    """Place the image on a white print with a deeper top margin."""
+    height, width = image.shape[:2]
+    print_width = max(1, int(width / 0.84))
+    side_margin = int(print_width * 0.02)
+    image_width = print_width - side_margin * 2
+    image_height = max(1, int(height * image_width / width))
+    resized = cv2.resize(image, (image_width, image_height), interpolation=cv2.INTER_AREA)
+    top_margin = int(print_width * 0.06)
+    bottom_margin = int(print_width * 0.06)
+    canvas = np.full(
+        (top_margin + image_height + bottom_margin, print_width, 3),
+        255,
+        dtype=np.uint8,
+    )
+    canvas[top_margin:top_margin + image_height, side_margin:side_margin + image_width] = resized
+    return canvas
+
+
 @app.get("/")
 async def root():
     return {"message": "FilterPixie API", "filters": FILTER_NAMES}
@@ -89,7 +108,13 @@ async def list_parameters():
     }
 
 
-def render_filter(image: np.ndarray, filter_name: str, intensity: float, parameter_json: str) -> np.ndarray:
+def render_filter(
+    image: np.ndarray,
+    filter_name: str,
+    intensity: float,
+    parameter_json: str,
+    polaroid: bool = False,
+) -> np.ndarray:
     if filter_name not in FILTER_NAMES:
         raise HTTPException(status_code=400, detail=f"Unknown filter: {filter_name}")
     try:
@@ -99,7 +124,8 @@ def render_filter(image: np.ndarray, filter_name: str, intensity: float, paramet
         parameters = preset_parameters(filter_name, intensity, overrides)
     except (TypeError, ValueError, json.JSONDecodeError) as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
-    return ENGINE.apply(image, parameters)
+    result = ENGINE.apply(image, parameters)
+    return make_polaroid(result) if polaroid else result
 
 
 @app.post("/apply-filter")
@@ -108,9 +134,10 @@ async def apply_filter(
     filter_name: str = Form(...),
     intensity: float = Form(1.0),
     parameters: str = Form("{}"),
+    polaroid: bool = Form(False),
 ):
     img = read_image(image)
-    filtered = render_filter(img, filter_name, intensity, parameters)
+    filtered = render_filter(img, filter_name, intensity, parameters, polaroid)
     result_bytes = encode_image(filtered)
 
     return Response(content=result_bytes, media_type="image/png")
@@ -122,11 +149,12 @@ async def apply_filter_base64(
     filter_name: str = Form(...),
     intensity: float = Form(1.0),
     parameters: str = Form("{}"),
+    polaroid: bool = Form(False),
 ):
     import base64
 
     img = read_image(image)
-    filtered = render_filter(img, filter_name, intensity, parameters)
+    filtered = render_filter(img, filter_name, intensity, parameters, polaroid)
     result_bytes = encode_image(filtered)
     b64 = base64.b64encode(result_bytes).decode('utf-8')
 

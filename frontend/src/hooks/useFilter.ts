@@ -9,8 +9,10 @@ interface UseFilterReturn {
   error: string | null;
   parameters: FilterParameters;
   selectedFilter: FilterId | null;
+  polaroid: boolean;
   applySelectedFilter: (file: File, filterId: FilterId) => Promise<void>;
   setParameter: (id: keyof FilterParameters, value: number) => void;
+  setPolaroid: (enabled: boolean) => void;
   setSelectedFilter: (filter: FilterId | null) => void;
   reset: () => void;
   downloadImage: () => void;
@@ -23,6 +25,7 @@ export function useFilter(): UseFilterReturn {
   const [error, setError] = useState<string | null>(null);
   const [parameters, setParameters] = useState<FilterParameters>({ ...DEFAULT_PARAMETERS });
   const [selectedFilter, setSelectedFilterState] = useState<FilterId | null>(null);
+  const [polaroid, setPolaroid] = useState(false);
   const originalFileRef = useRef<File | null>(null);
 
   const reset = useCallback(() => {
@@ -31,6 +34,7 @@ export function useFilter(): UseFilterReturn {
     setOriginalImage(null);
     setFilteredImage(null);
     setSelectedFilterState(null);
+    setPolaroid(false);
     setError(null);
     originalFileRef.current = null;
   }, [originalImage, filteredImage]);
@@ -49,7 +53,7 @@ export function useFilter(): UseFilterReturn {
       }
 
       try {
-        const resultUrl = await applyFilter(file, filterId, 1, parameters);
+        const resultUrl = await applyFilter(file, filterId, 1, parameters, polaroid);
         if (filteredImage) URL.revokeObjectURL(filteredImage);
         setFilteredImage(resultUrl);
       } catch (err) {
@@ -59,7 +63,7 @@ export function useFilter(): UseFilterReturn {
         setIsLoading(false);
       }
     },
-    [parameters, filteredImage, originalImage]
+    [parameters, polaroid, filteredImage, originalImage]
   );
 
   const setParameter = useCallback((id: keyof FilterParameters, value: number) => {
@@ -85,7 +89,7 @@ export function useFilter(): UseFilterReturn {
     if (filteredImage && selectedFilter && originalFileRef.current) {
       applySelectedFilter(originalFileRef.current, selectedFilter);
     }
-  }, [selectedFilter, parameters]);
+  }, [selectedFilter, parameters, polaroid]);
 
   return {
     originalImage,
@@ -93,9 +97,11 @@ export function useFilter(): UseFilterReturn {
     isLoading,
     error,
     selectedFilter,
+    polaroid,
     applySelectedFilter,
     parameters,
     setParameter,
+    setPolaroid,
     setSelectedFilter,
     reset,
     downloadImage,

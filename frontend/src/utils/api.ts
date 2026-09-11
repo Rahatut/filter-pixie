@@ -14,13 +14,15 @@ export async function applyFilter(
   file: File,
   filterId: string,
   intensity: number,
-  parameters: FilterParameters
+  parameters: FilterParameters,
+  polaroid: boolean
 ): Promise<string> {
   const formData = new FormData();
   formData.append('image', file);
   formData.append('filter_name', filterId);
   formData.append('intensity', intensity.toString());
   formData.append('parameters', JSON.stringify(parameters));
+  formData.append('polaroid', polaroid.toString());
 
   const response = await fetch(getApiUrl('/apply-filter'), {
     method: 'POST',
